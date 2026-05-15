@@ -167,6 +167,28 @@ h1 {
   box-shadow: 0 0 0 2px rgba(134, 180, 223, 0.24);
 }
 
+.xlsx-fallback {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(221, 240, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(7, 17, 27, 0.82);
+}
+
+.xlsx-fallback span {
+  color: #dbeeff;
+  font-size: 16px;
+  font-weight: 1000;
+}
+
+.xlsx-fallback input {
+  color: #f7fbff;
+  font: inherit;
+}
+
 .name-grid {
   display: grid;
   grid-template-columns: repeat(9, minmax(0, 1fr));

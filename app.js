@@ -17,6 +17,8 @@ const nameGrid = document.querySelector("#nameGrid");
 const benefitPanel = document.querySelector(".benefit-panel");
 const benefitInputs = [...document.querySelectorAll(".benefit-input")];
 const participantNames = document.querySelector("#participantNames");
+const xlsxFallback = document.querySelector("#xlsxFallback");
+const xlsxInput = document.querySelector("#xlsxInput");
 const roundBadge = document.querySelector("#roundBadge");
 const winnerOverlay = document.querySelector("#winnerOverlay");
 const winnerRank = document.querySelector("#winnerRank");
@@ -228,11 +230,120 @@ async function loadParticipants() {
     resetFlow(false, false);
     setMessage(`${data.source}${text.loadedPrefix}${allParticipants.length}${text.loadedSuffix}`);
   } catch (error) {
+    xlsxFallback.classList.remove("hidden");
     setMessage(error.message);
   } finally {
     busy = false;
     setButtons("pick");
   }
+}
+
+async function loadParticipantsFromFile(file) {
+  if (!file) return;
+  busy = true;
+  setButtons("pick");
+  try {
+    const buffer = await file.arrayBuffer();
+    allParticipants = await readParticipantsFromXlsx(buffer);
+    populateParticipantNames();
+    countEl.textContent = `${allParticipants.length}${text.peopleUnit}`;
+    updatedEl.textContent = text.updated;
+    xlsxFallback.classList.add("hidden");
+    resetFlow(false, false);
+  } catch (error) {
+    setMessage(error.message);
+  } finally {
+    busy = false;
+    setButtons("pick");
+  }
+}
+
+async function readParticipantsFromXlsx(buffer) {
+  const files = await unzipXlsx(buffer);
+  const shared = readSharedStrings(files["xl/sharedStrings.xml"] || "");
+  const sheet = files["xl/worksheets/sheet1.xml"];
+  if (!sheet) throw new Error("sheet1.xml not found in xlsx.");
+  const parser = new DOMParser();
+  const xml = parser.parseFromString(sheet, "application/xml");
+  const rows = [...xml.getElementsByTagName("row")];
+  const people = [];
+
+  rows.forEach((row) => {
+    const rowNumber = Number(row.getAttribute("r") || 0);
+    if (rowNumber < 3) return;
+    const cells = {};
+    [...row.getElementsByTagName("c")].forEach((cell) => {
+      const ref = cell.getAttribute("r") || "";
+      const col = columnNumber(ref.replace(/\d/g, ""));
+      const valueNode = cell.getElementsByTagName("v")[0];
+      if (!valueNode) return;
+      let value = valueNode.textContent.trim();
+      if (cell.getAttribute("t") === "s") {
+        value = shared[Number(value)] || "";
+      }
+      cells[col] = value.trim();
+    });
+    [
+      { name: cells[2], attendance: cells[3], type: "student" },
+      { name: cells[8], attendance: cells[9], type: "alumni" }
+    ].forEach((source) => {
+      if (source.name && /^(O|o|Y|Yes|YES|1)$/.test(source.attendance || "")) {
+        people.push({ name: source.name.trim(), group: source.type, row: rowNumber, type: source.type });
+      }
+    });
+  });
+
+  return people;
+}
+
+function columnNumber(letters) {
+  return letters.toUpperCase().split("").reduce((sum, letter) => (
+    sum * 26 + letter.charCodeAt(0) - 64
+  ), 0);
+}
+
+function readSharedStrings(xmlText) {
+  if (!xmlText) return [];
+  const xml = new DOMParser().parseFromString(xmlText, "application/xml");
+  return [...xml.getElementsByTagName("si")].map((si) => (
+    [...si.getElementsByTagName("t")].map((node) => node.textContent).join("")
+  ));
+}
+
+async function unzipXlsx(buffer) {
+  const view = new DataView(buffer);
+  const files = {};
+  let offset = 0;
+  while (offset < view.byteLength - 4) {
+    if (view.getUint32(offset, true) !== 0x04034b50) {
+      offset += 1;
+      continue;
+    }
+    const method = view.getUint16(offset + 8, true);
+    const compressedSize = view.getUint32(offset + 18, true);
+    const fileNameLength = view.getUint16(offset + 26, true);
+    const extraLength = view.getUint16(offset + 28, true);
+    const nameStart = offset + 30;
+    const dataStart = nameStart + fileNameLength + extraLength;
+    const name = new TextDecoder().decode(new Uint8Array(buffer, nameStart, fileNameLength));
+    const data = new Uint8Array(buffer, dataStart, compressedSize);
+    if (method === 0) {
+      files[name] = new TextDecoder().decode(data);
+    } else if (method === 8) {
+      files[name] = await inflateRaw(data);
+    }
+    offset = dataStart + compressedSize;
+  }
+  return files;
+}
+
+async function inflateRaw(data) {
+  if (!("DecompressionStream" in window)) {
+    throw new Error("이 브라우저에서는 xlsx 직접 읽기를 지원하지 않습니다. 로컬 실행 파일을 사용해주세요.");
+  }
+  const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+  const buffer = await new Response(stream).arrayBuffer();
+  return new TextDecoder().decode(buffer);
 }
 
 function resetFlow(keepMessage = true, animated = true) {
@@ -515,6 +626,7 @@ window.addEventListener("resize", () => {
 });
 
 refreshButton.addEventListener("click", loadParticipants);
+xlsxInput.addEventListener("change", () => loadParticipantsFromFile(xlsxInput.files[0]));
 pickButton.addEventListener("click", pickCandidates);
 goWheelButton.addEventListener("click", goToWheel);
 repickButton.addEventListener("click", repickCandidates);
