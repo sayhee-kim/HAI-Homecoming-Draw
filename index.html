@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HAI 2026 Homecoming Day</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <img class="logo" src="%ED%85%9C%ED%94%8C%EB%A6%BF%20%EB%A0%88%ED%8D%BC%EB%9F%B0%EC%8A%A4/logo.png" alt="Lab logo">
+      <div class="title">
+        <h1 id="screenTitle">2026 HAI &#xD648;&#xCEE4;&#xBC0D;&#xB370;&#xC774; &#xACBD;&#xD488; &#xBF51;&#xAE30;</h1>
+      </div>
+      <div class="status">
+        <span id="count">0&#xBA85;</span>
+        <span id="updated">&#xB300;&#xAE30; &#xC911;</span>
+      </div>
+    </header>
+
+    <section id="selectionScreen" class="screen active">
+      <div class="selection-stage">
+        <div class="benefit-panel">
+          <span>&#xC55E; &#xAC8C;&#xC784; &#xBCA0;&#xB124;&#xD54F;</span>
+          <div class="benefit-inputs">
+            <input class="benefit-input" list="participantNames" placeholder="1">
+            <input class="benefit-input" list="participantNames" placeholder="2">
+            <input class="benefit-input" list="participantNames" placeholder="3">
+            <input class="benefit-input" list="participantNames" placeholder="4">
+            <input class="benefit-input" list="participantNames" placeholder="5">
+          </div>
+          <datalist id="participantNames"></datalist>
+        </div>
+        <div id="nameGrid" class="name-grid"></div>
+      </div>
+    </section>
+
+    <section id="wheelScreen" class="screen">
+      <div class="round-badge" id="roundBadge">1&#xB4F1; &#xCD94;&#xCCA8;</div>
+      <div class="roulette-wrap">
+        <div class="pointer"></div>
+        <canvas id="wheel" width="920" height="920" aria-label="roulette"></canvas>
+        <div class="hub"></div>
+      </div>
+    </section>
+
+    <section id="resultScreen" class="screen result-screen">
+      <canvas id="fireworks" width="1600" height="900" aria-hidden="true"></canvas>
+      <div class="podium">
+        <h2>&#xCD95;&#xD558;&#xD569;&#xB2C8;&#xB2E4;!</h2>
+        <div id="winnerList" class="winner-list"></div>
+      </div>
+    </section>
+
+    <div class="controls">
+      <button id="refreshButton">Refresh</button>
+      <button id="pickButton" class="primary">&#xD6C4;&#xBCF4; 10&#xBA85; &#xBF51;&#xAE30;</button>
+      <button id="spinButton" class="primary hidden">&#xB8F0;&#xB81B; &#xB3CC;&#xB9AC;&#xAE30;</button>
+      <button id="goWheelButton" class="primary hidden">&#xB8F0;&#xB81B;&#xC73C;&#xB85C;</button>
+      <button id="repickButton" class="hidden">TOP 10 &#xB2E4;&#xC2DC;</button>
+      <button id="nextButton" class="hidden">&#xB2E4;&#xC74C; &#xD68C;&#xCC28;</button>
+    </div>
+
+    <div id="winnerOverlay" class="winner-overlay hidden">
+      <p id="winnerRank">Winner</p>
+      <strong id="winnerName"></strong>
+    </div>
+
+    <div id="message" class="message"></div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
