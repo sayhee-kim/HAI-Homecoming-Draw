@@ -230,8 +230,20 @@ async function loadParticipants() {
     resetFlow(false, false);
     setMessage(`${data.source}${text.loadedPrefix}${allParticipants.length}${text.loadedSuffix}`);
   } catch (error) {
-    xlsxFallback.classList.remove("hidden");
-    setMessage(error.message);
+    try {
+      const response = await fetch(encodeURI("홈커밍 참여 인원.xlsx"), { cache: "no-store" });
+      if (!response.ok) throw error;
+      const buffer = await response.arrayBuffer();
+      allParticipants = await readParticipantsFromXlsx(buffer);
+      populateParticipantNames();
+      countEl.textContent = `${allParticipants.length}${text.peopleUnit}`;
+      updatedEl.textContent = text.updated;
+      xlsxFallback.classList.add("hidden");
+      resetFlow(false, false);
+    } catch (fallbackError) {
+      xlsxFallback.classList.remove("hidden");
+      setMessage(fallbackError.message || error.message);
+    }
   } finally {
     busy = false;
     setButtons("pick");
